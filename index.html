@@ -1,0 +1,90 @@
+﻿<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>即時留言板</title>
+		<style>
+			body{margin:5px;background:black;color:#888}
+			header,footer{width:100%;height:50px;font-size:35px;position:fixed;left:0px;line-height:50px}
+			input{
+				border:none;height:40px;font-size:25px;background:#555;margin:0px 5px;border-radius:5px;
+			}
+			input[type=text]{
+				width:calc(100% - 120px);margin-left:5px;
+			}
+			header{top:0px;font-weight:bold}
+			footer{bottom:0px}
+			footer input[type=button]{
+				float:right;margin-right:5px;width:100px;
+			}
+			content input{
+				font-size:20px;height:30px;width:100px
+			}
+			@keyframes Show{
+				0%{opacity:0}
+			}
+			.Msg{
+				animation:Show 1s;background:#333;border-radius:10px;margin-bottom:10px;padding:5px;width:90%;margin-left:5%;word-break: break-all;
+			}
+			content{position:fixed;overflow:auto;top:50px;left:0px;height:calc(100% - 100px);width:100%;font-weight:bold;}
+		</style>
+		<script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
+		<script>
+		  // Initialize Firebase
+		  var config = {
+			apiKey: "AIzaSyA8JICoYEREFIlrCdzUcNg1odkpAiDrXho",
+			authDomain: "private-message-9cfb8.firebaseapp.com",
+			databaseURL: "https://private-message-9cfb8.firebaseio.com",
+			projectId: "private-message-9cfb8",
+			storageBucket: "private-message-9cfb8.appspot.com",
+			messagingSenderId: "306023486761"
+		  };
+		  firebase.initializeApp(config);
+		</script>
+	</head>
+	<body>
+		<header>即時留言板</header>
+		<content>
+		</content>
+		<footer>
+			<div style="padding:5px;margin-left:5%;width:90%"><input type="text" placeholder="留下訊息吧"/><input type="button" value="送出" onclick="SetMessage()"/></div>
+		</footer>
+		<script>
+			document.body.onkeydown=function(e){if(e.which==13)SetMessage()}
+			function DelMessage(v){
+				firebase.database().ref("/"+v).remove();
+			}
+			function GetMessage(){
+				firebase.database().ref("/length").on("value",function(r){
+					r=r.val();if(!r)r=0;
+					for(var i=r-1;i>-1;i--){
+						if(document.getElementById("M"+i))break;
+						var div=document.createElement("div"),odm=document.getElementById("M"+(i-1));
+						div.id="M"+i;div.className="Msg";
+						if(odm)document.querySelector("content").insertBefore(div,odm);
+						else document.querySelector("content").appendChild(div);Message(i);
+					}
+				})
+			}
+			function Message(v){
+				firebase.database().ref("/"+v).on("value",function(r){
+					r=r.val();if(!r)return document.querySelector("content").removeChild(document.getElementById("M"+v));
+					document.getElementById("M"+v).innerHTML="時間:<font color='white'>"+r.dt+"</font><hr>訊息:<font color='white'>"+r.msg+"</font><div align='right' style='height:30px'><input type='button' onclick='DelMessage("+v+")' value='移除訊息'></div>";
+				})
+			}
+			function SetMessage(){
+				firebase.database().ref("/length").once("value",function(r){
+					r=r.val();if(!r)r=0;
+					var data={length:r+1},date=new Date();
+					data[r]={
+						dt:date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate()+" "+date.getHours()+":"+date.getMinutes(),
+						msg:document.querySelector("input[type=text]").value.replace(/</g,"&lt;").replace(/>/g,"&gt;")
+					}
+					if(document.querySelector("input[type=text]").value)firebase.database().ref("/").update(data,function(){
+						document.querySelector("input[type=text]").value=""
+					})
+				})
+			}
+			GetMessage();
+		</script>
+	</body>
+</html>
