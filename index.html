@@ -78,7 +78,7 @@
 					r=r.val();if(!r)r=0;
 					var data={length:r+1},date=new Date();
 					data[r]={
-						dt:date.getFullYear()+"/"+date.getMonth()+"/"+date.getDate()+" "+date.getHours()+":"+date.getMinutes(),
+						dt:date.getFullYear()+"/"+(date.getMonth()+1)+"/"+date.getDate()+" "+date.getHours()+":"+date.getMinutes(),
 						msg:document.querySelector("input[type=text]").value.replace(/</g,"&lt;").replace(/>/g,"&gt;")
 					}
 					if(document.querySelector("input[type=text]").value)firebase.database().ref("/").update(data,function(){
