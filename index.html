@@ -1,92 +1,320 @@
 ﻿<html>
-	<head>
-		<meta charset="utf-8"/>
-		<meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
-<meta name="mobile-web-app-capable" content="yes" />
-		<title>即時留言板</title>
-		<style>
-			body{margin:5px;background:black;color:#888}
-			header,footer{width:100%;height:50px;font-size:35px;position:fixed;left:0px;line-height:50px}
-			input{
-				border:none;height:40px;font-size:25px;background:#555;margin:0px 5px;border-radius:5px;
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<title>即時留言板</title>
+	<style>
+		* {
+			font-family: monospace;
+		}
+
+		html,
+		body {
+			display: flex;
+			flex-direction: column;
+			color: #eee;
+			background: #222;
+			width: 100%;
+			height: 100%;
+			margin: 0px;
+		}
+
+		header {
+			font-size: 40px;
+			text-indent: 20px;
+			line-height: 60px;
+			width: 100%;
+			height: 60px;
+		}
+
+		#message-container {
+			display: flex;
+			flex-direction: column;
+			box-sizing: border-box;
+			background: #111;
+			width: 100%;
+			height: calc(100% - 120px);
+			overflow: auto;
+			padding: 8px;
+		}
+
+		.message {
+			box-sizing: border-box;
+			background: #444;
+			width: 100%;
+			padding: 14px;
+			margin: 8px 0px;
+			animation: show 0.5s;
+		}
+
+		.message::after {
+			content: "";
+			clear: both;
+		}
+
+		.update-time {
+			box-sizing: border-box;
+			width: 100%;
+			height: 20px;
+			animation: show 0.5s;
+		}
+
+		.update-time::before {
+			display: block;
+			content: "";
+			background: #ddd;
+			width: calc(100% - 150px);
+			height: 2px;
+			margin: 9px 0px;
+			float: left;
+		}
+
+		.update-time::after {
+			content: "";
+			clear: both;
+		}
+
+		.update-time .time {
+			display: block;
+			font-size: 14px;
+			text-align: center;
+			line-height: 20px;
+			width: 150px;
+			height: 20px;
+			float: left;
+		}
+
+		#message-input-container {
+			display: flex;
+			flex-direction: row;
+			box-sizing: border-box;
+			background: #333;
+			width: 100%;
+			height: 60px;
+			padding: 14px;
+		}
+
+		#message-input {
+			box-sizing: border-box;
+			resize: none;
+			font-size: 16px;
+			line-height: 16px;
+			background: #ddd;
+			width: calc(100% - 64px - 14px);
+			height: 32px;
+			padding: 8px;
+			border: 0px;
+			border-radius: 2px;
+		}
+
+		#message-input:focus {
+			outline: none;
+		}
+
+		#message-send {
+			box-sizing: border-box;
+			font-size: 16px;
+			line-height: 32px;
+			background: #ddd;
+			width: 64px;
+			height: 32px;
+			margin-left: 14px;
+			padding: 0px;
+			border: 0px;
+			border-radius: 2px;
+		}
+
+		@keyframes show {
+			0% {
+				opacity: 0;
 			}
-			input[type=text]{
-				width:calc(100% - 120px);margin-left:5px;
+		}
+	</style>
+	<style>
+		#loading {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			transition: opacity 0.5s;
+		}
+
+		#loading-circle {
+			background: #eee;
+			width: 100px;
+			height: 100px;
+			position: relative;
+			border-radius: 100px;
+			animation: load 2s infinite;
+		}
+
+		#loading-circle-cover {
+			background: #111;
+			width: 96px;
+			height: 96px;
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			border-radius: 96px;
+		}
+
+		#loading-circle-left-cover {
+			background: #111;
+			width: 60px;
+			height: 100px;
+			position: absolute;
+			top: 0px;
+			left: -10px;
+			transform-origin: right;
+			animation: left-load 1s infinite;
+		}
+
+		#loading-circle-right-cover {
+			background: #111;
+			width: 60px;
+			height: 100px;
+			position: absolute;
+			top: 0px;
+			right: -10px;
+			transform-origin: left;
+			animation: right-load 1s infinite;
+		}
+
+		@keyframes load {
+			0% {
+				transform: rotateZ(0deg);
 			}
-			header{top:0px;font-weight:bold}
-			footer{bottom:0px}
-			footer input[type=button]{
-				float:right;margin-right:5px;width:100px;
+			50% {
+				transform: rotateZ(360deg);
 			}
-			content input{
-				font-size:20px;height:30px;width:100px
+			100% {
+				transform: rotateZ(720deg);
 			}
-			@keyframes Show{
-				0%{opacity:0}
+		}
+
+		@keyframes left-load {
+			0% {
+				transform: rotateZ(-0deg);
 			}
-			.Msg{
-				animation:Show 1s;background:#333;border-radius:10px;margin-bottom:10px;padding:5px;width:90%;margin-left:5%;word-break: break-all;
+			50% {
+				transform: rotateZ(-45deg);
 			}
-			content{position:fixed;overflow:auto;top:50px;left:0px;height:calc(100% - 100px);width:100%;font-weight:bold;}
-		</style>
-		<script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
-		<script>
-		  // Initialize Firebase
-		  var config = {
+		}
+
+		@keyframes right-load {
+			0% {
+				transform: rotateZ(0deg);
+			}
+			50% {
+				transform: rotateZ(45deg);
+			}
+		}
+	</style>
+	<script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
+	<script>
+		// Initialize Firebase
+		var config = {
 			apiKey: "AIzaSyA8JICoYEREFIlrCdzUcNg1odkpAiDrXho",
 			authDomain: "private-message-9cfb8.firebaseapp.com",
 			databaseURL: "https://private-message-9cfb8.firebaseio.com",
 			projectId: "private-message-9cfb8",
 			storageBucket: "private-message-9cfb8.appspot.com",
 			messagingSenderId: "306023486761"
-		  };
-		  firebase.initializeApp(config);
-		</script>
-	</head>
-	<body>
-		<header>即時留言板</header>
-		<content>
-		</content>
-		<footer>
-			<div style="padding:5px;margin-left:5%;width:90%"><input type="text" placeholder="留下訊息吧"/><input type="button" value="送出" onclick="SetMessage()"/></div>
-		</footer>
-		<script>
-			document.body.onkeydown=function(e){if(e.which==13)SetMessage()}
-			function DelMessage(v){
-				firebase.database().ref("/"+v).remove();
+		};
+		firebase.initializeApp(config);
+	</script>
+</head>
+
+<body>
+	<header>即時留言板</header>
+	<div id="message-container">
+		<div id="loading">
+			<div id="loading-circle">
+				<div id="loading-circle-cover"></div>
+				<div id="loading-circle-left-cover"></div>
+				<div id="loading-circle-right-cover"></div>
+			</div>
+		</div>
+	</div>
+	<div id="message-input-container">
+		<textarea id="message-input" placeholder="輸入訊息"></textarea>
+		<input type="button" id="message-send" value="送出" />
+	</div>
+	<script>
+		var messageContainer = document.getElementById("message-container"),
+			messageSend = document.getElementById("message-send"),
+			messageInput = document.getElementById("message-input"),
+			load = document.getElementById("loading"),
+			messageLength = -1;
+		function createMessage(id) {
+			firebase.database().ref(`/${id}`).once("value", function (response) {
+				var data = response.val();
+				if (!data) return;
+				var updateTime = data.updateTime,
+					message = data.message;
+				if (!document.getElementById(`update-in-${data.updateTime.replace(" ", "-")}`))
+					createUpdateTime(data.updateTime);
+				var messageDiv = document.createElement("div");
+				messageDiv.id = `message${id}`;
+				messageDiv.className = "message";
+				messageDiv.innerHTML = message;
+				messageContainer.appendChild(messageDiv);
+			});
+		}
+		function createUpdateTime(updateTime) {
+			var updateTimeDiv = document.createElement("div"),
+				updateTimeContentDiv = document.createElement("div");
+			updateTimeDiv.id = `update-in-${updateTime.replace(" ", "-")}`;
+			updateTimeDiv.className = "update-time";
+			updateTimeContentDiv.className = "time";
+			updateTimeContentDiv.innerHTML = updateTime;
+			updateTimeDiv.appendChild(updateTimeContentDiv);
+			messageContainer.appendChild(updateTimeDiv);
+		}
+		firebase.database().ref("/length").on("value", function (response) {
+			messageLength = response.val();
+			if (load) {
+				load.style.opacity = 0;
+				load.style.height = "0px";
+				setTimeout(function () {
+					messageContainer.removeChild(load);
+					delete load;
+				}, 1000);
 			}
-			function GetMessage(){
-				firebase.database().ref("/length").on("value",function(r){
-					r=r.val();if(!r)r=0;
-					for(var i=r-1;i>-1;i--){
-						if(document.getElementById("M"+i))break;
-						var div=document.createElement("div"),odm=document.getElementById("M"+(i-1));
-						div.id="M"+i;div.className="Msg";
-						if(odm)document.querySelector("content").insertBefore(div,odm);
-						else document.querySelector("content").appendChild(div);Message(i);
-					}
-				})
+			for (var id = 0; id < messageLength; id++) {
+				if (document.getElementById(`message${id}`)) continue;
+				createMessage(id);
 			}
-			function Message(v){
-				firebase.database().ref("/"+v).on("value",function(r){
-					r=r.val();if(!r)return document.querySelector("content").removeChild(document.getElementById("M"+v));
-					document.getElementById("M"+v).innerHTML="時間:<font color='white'>"+r.dt+"</font><hr>訊息:<font color='white'>"+r.msg+"</font><div align='right' style='height:30px'><input type='button' onclick='DelMessage("+v+")' value='移除訊息'></div>";
-				})
+		});
+		messageSend.addEventListener("click", function () {
+			var now = new Date(),
+				updateTime = `${now.getFullYear()}-${
+					(now.getMonth() + 1 > 9 ? "" : "0") + (now.getMonth() + 1)
+					}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}`,
+				message = messageInput.value;
+			if (!message) return;
+			firebase.database().ref("/length").once("value", function (response) {
+				messageLength = response.val() || 0;
+				firebase.database().ref(`/${messageLength}`).set({
+					updateTime,
+					message
+				}, function () {
+					firebase.database().ref("/length").set(++messageLength);
+					messageInput.value = "";
+				});
+			});
+		});
+		messageInput.addEventListener("keypress", function (event) {
+			if (event.which == 13 && this.selectionStart == this.value.length) {
+				event.preventDefault();
+				messageSend.click();
 			}
-			function SetMessage(){
-				firebase.database().ref("/length").once("value",function(r){
-					r=r.val();if(!r)r=0;
-					var data={length:r+1},date=new Date();
-					data[r]={
-						dt:date.getFullYear()+"/"+(date.getMonth()+1)+"/"+date.getDate()+" "+date.getHours()+":"+date.getMinutes(),
-						msg:document.querySelector("input[type=text]").value.replace(/</g,"&lt;").replace(/>/g,"&gt;")
-					}
-					if(document.querySelector("input[type=text]").value)firebase.database().ref("/").update(data,function(){
-						document.querySelector("input[type=text]").value=""
-					})
-				})
-			}
-			GetMessage();
-		</script>
-	</body>
+		});
+	</script>
+</body>
+
 </html>
