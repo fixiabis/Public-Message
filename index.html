@@ -314,7 +314,7 @@
 			firebase.database().ref(`/${id}`).once("value", function (response) {
 				var data = response.val();
 				if (!data) return;
-				if (data.userName != window.userName)
+				if (window.userName && data.userName != window.userName)
 					document.title = `${data.userName}有新的留言`;
 				var updateTime = data.updateTime,
 					message = data.message,
