@@ -10,6 +10,10 @@
 			font-family: monospace;
 		}
 
+		*:focus {
+			outline: none;
+		}
+
 		html,
 		body {
 			display: flex;
@@ -107,10 +111,6 @@
 			padding: 8px;
 			border: 0px;
 			border-radius: 2px;
-		}
-
-		#message-input:focus {
-			outline: none;
 		}
 
 		#message-send {
@@ -214,6 +214,54 @@
 			}
 		}
 	</style>
+	<style>
+		#user-name-input-box {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: rgba(0, 0, 0, 0.5);
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			z-index: 5;
+		}
+
+		#user-name-input-container {
+			display: flex;
+			flex-direction: row;
+			box-sizing: border-box;
+			width: 90%;
+			height: 60px;
+			padding: 14px;
+		}
+
+		#user-name {
+			box-sizing: border-box;
+			font-size: 16px;
+			line-height: 16px;
+			background: #ddd;
+			width: calc(100% - 64px - 14px);
+			height: 32px;
+			padding: 8px;
+			border: 0px;
+			border-radius: 2px;
+		}
+
+		#user-name-send {
+			box-sizing: border-box;
+			font-size: 16px;
+			line-height: 32px;
+			background: #ddd;
+			width: 64px;
+			height: 32px;
+			margin-left: 14px;
+			padding: 0px;
+			border: 0px;
+			border-radius: 2px;
+		}
+	</style>
 	<script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
 	<script>
 		// Initialize Firebase
@@ -231,6 +279,12 @@
 
 <body>
 	<header>即時留言板</header>
+	<div id="user-name-input-box">
+		<div id="user-name-input-container">
+			<input type="text" id="user-name" placeholder="輸入暱稱" />
+			<input type="button" id="user-name-send" value="完成" />
+		</div>
+	</div>
 	<div id="message-container">
 		<div id="loading">
 			<div id="loading-circle">
@@ -249,19 +303,26 @@
 			messageSend = document.getElementById("message-send"),
 			messageInput = document.getElementById("message-input"),
 			load = document.getElementById("loading"),
-			messageLength = -1;
+			messageLength = -1,
+			userNameSend = document.getElementById("user-name-send"),
+			userNameInput = document.getElementById("user-name"),
+			userNameCover = document.getElementById("user-name-input-box"),
+			userName = "";
+		userNameInput.focus();
+		messageInput.readOnly = true;
 		function createMessage(id) {
 			firebase.database().ref(`/${id}`).once("value", function (response) {
 				var data = response.val();
 				if (!data) return;
 				var updateTime = data.updateTime,
-					message = data.message;
+					message = data.message,
+					userName = data.userName;
 				if (!document.getElementById(`update-in-${data.updateTime.replace(/ |:/g, "-")}`))
 					createUpdateTime(data.updateTime);
 				var messageDiv = document.createElement("div");
 				messageDiv.id = `message${id}`;
 				messageDiv.className = "message";
-				messageDiv.innerHTML = message;
+				messageDiv.innerHTML = `${userName} : ${message}`;
 				messageContainer.appendChild(messageDiv);
 				messageContainer.scrollTop = messageContainer.scrollHeight;
 			});
@@ -294,6 +355,15 @@
 		function format(v) {
 			return (v > 9 ? "" : "0") + v;
 		}
+		userNameSend.addEventListener("click", function () {
+			userName = userNameInput.value;
+			if (userName) {
+				userNameCover.style.display = "none";
+				messageInput.readOnly = false;
+				messageInput.focus();
+				messageInput.placeholder = `${userName}, 試著` + messageInput.placeholder + "吧";
+			}
+		});
 		messageSend.addEventListener("click", function () {
 			var now = new Date(),
 				updateTime = `${now.getFullYear()}-${
@@ -304,6 +374,7 @@
 			firebase.database().ref("/length").once("value", function (response) {
 				messageLength = response.val() || 0;
 				firebase.database().ref(`/${messageLength}`).set({
+					userName,
 					updateTime,
 					message
 				}, function () {
@@ -311,12 +382,16 @@
 					messageInput.value = "";
 				});
 			});
+			messageInput.placeholder = "輸入訊息";
 		});
 		messageInput.addEventListener("keypress", function (event) {
 			if (event.which == 13 && this.selectionStart == this.value.length) {
 				event.preventDefault();
 				messageSend.click();
 			}
+		});
+		userNameInput.addEventListener("keypress", function (event) {
+			if (event.which == 13) userNameSend.click();
 		});
 	</script>
 </body>
