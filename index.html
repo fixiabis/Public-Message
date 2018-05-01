@@ -263,6 +263,7 @@
 				messageDiv.className = "message";
 				messageDiv.innerHTML = message;
 				messageContainer.appendChild(messageDiv);
+				messageContainer.scrollTop = messageContainer.scrollHeight;
 			});
 		}
 		function createUpdateTime(updateTime) {
