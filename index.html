@@ -283,7 +283,7 @@
 				load.style.height = "0px";
 				setTimeout(function () {
 					messageContainer.removeChild(load);
-					delete load;
+					load = undefined;
 				}, 1000);
 			}
 			for (var id = 0; id < messageLength; id++) {
