@@ -256,7 +256,7 @@
 				if (!data) return;
 				var updateTime = data.updateTime,
 					message = data.message;
-				if (!document.getElementById(`update-in-${data.updateTime.replace(" ", "-")}`))
+				if (!document.getElementById(`update-in-${data.updateTime.replace(/ |:/g, "-")}`))
 					createUpdateTime(data.updateTime);
 				var messageDiv = document.createElement("div");
 				messageDiv.id = `message${id}`;
@@ -268,7 +268,7 @@
 		function createUpdateTime(updateTime) {
 			var updateTimeDiv = document.createElement("div"),
 				updateTimeContentDiv = document.createElement("div");
-			updateTimeDiv.id = `update-in-${updateTime.replace(" ", "-")}`;
+			updateTimeDiv.id = `update-in-${updateTime.replace(/ |:/g, "-")}`;
 			updateTimeDiv.className = "update-time";
 			updateTimeContentDiv.className = "time";
 			updateTimeContentDiv.innerHTML = updateTime;
@@ -290,11 +290,14 @@
 				createMessage(id);
 			}
 		});
+		function format(v) {
+			return (v > 9 ? "" : "0") + v;
+		}
 		messageSend.addEventListener("click", function () {
 			var now = new Date(),
 				updateTime = `${now.getFullYear()}-${
-					(now.getMonth() + 1 > 9 ? "" : "0") + (now.getMonth() + 1)
-					}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}`,
+					format(now.getMonth() + 1)
+					}-${format(now.getDate())} ${format(now.getHours())}:${format(now.getMinutes())}`,
 				message = messageInput.value;
 			if (!message) return;
 			firebase.database().ref("/length").once("value", function (response) {
