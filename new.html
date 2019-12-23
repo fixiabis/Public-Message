@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>即時留言板</title>
+    <style>
+        * {
+            font-family: monospace;
+        }
+
+        *:focus {
+            outline: none;
+        }
+
+        html,
+        body {
+            display: flex;
+            flex-direction: column;
+            color: #eee;
+            background: #222;
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+        }
+
+        header {
+            font-size: 40px;
+            text-indent: 20px;
+            line-height: 60px;
+            width: 100%;
+            height: 60px;
+        }
+
+        #message-container {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            background: #111;
+            width: 100%;
+            height: calc(100% - 120px);
+            overflow: auto;
+            padding: 8px;
+        }
+
+        .message {
+            box-sizing: border-box;
+            background: #444;
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0px;
+            animation: show 0.5s;
+        }
+
+        .message::after {
+            content: "";
+            clear: both;
+        }
+
+        .update-time {
+            box-sizing: border-box;
+            width: 100%;
+            height: 20px;
+            animation: show 0.5s;
+        }
+
+        .update-time::before {
+            display: block;
+            content: "";
+            background: #ddd;
+            width: calc(100% - 150px);
+            height: 2px;
+            margin: 9px 0px;
+            float: left;
+        }
+
+        .update-time::after {
+            content: "";
+            clear: both;
+        }
+
+        .update-time .time {
+            display: block;
+            font-size: 14px;
+            text-align: center;
+            line-height: 20px;
+            width: 150px;
+            height: 20px;
+            float: left;
+        }
+
+        #message-input-container {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: row;
+            box-sizing: border-box;
+            background: #333;
+            width: 100%;
+            height: 60px;
+            padding: 14px;
+        }
+
+        #message-input {
+            box-sizing: border-box;
+            resize: none;
+            font-size: 16px;
+            line-height: 16px;
+            background: #ddd;
+            width: calc(100% - 64px - 64px - 14px);
+            height: 32px;
+            padding: 8px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        #user-logout,
+        #message-send {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 32px;
+            background: #ddd;
+            width: 64px;
+            height: 32px;
+            padding: 0px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        @keyframes show {
+            0% {
+                opacity: 0;
+            }
+        }
+    </style>
+    <style>
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: opacity 0.5s;
+        }
+
+        #loading-circle {
+            background: #eee;
+            width: 100px;
+            height: 100px;
+            position: relative;
+            border-radius: 100px;
+            animation: load 2s infinite;
+        }
+
+        #loading-circle-cover {
+            background: #111;
+            width: 96px;
+            height: 96px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            border-radius: 96px;
+        }
+
+        #loading-circle-left-cover {
+            background: #111;
+            width: 60px;
+            height: 100px;
+            position: absolute;
+            top: 0px;
+            left: -10px;
+            transform-origin: right;
+            animation: left-load 1s infinite;
+        }
+
+        #loading-circle-right-cover {
+            background: #111;
+            width: 60px;
+            height: 100px;
+            position: absolute;
+            top: 0px;
+            right: -10px;
+            transform-origin: left;
+            animation: right-load 1s infinite;
+        }
+
+        @keyframes load {
+            0% {
+                transform: rotateZ(0deg);
+            }
+
+            50% {
+                transform: rotateZ(360deg);
+            }
+
+            100% {
+                transform: rotateZ(720deg);
+            }
+        }
+
+        @keyframes left-load {
+            0% {
+                transform: rotateZ(-0deg);
+            }
+
+            50% {
+                transform: rotateZ(-45deg);
+            }
+        }
+
+        @keyframes right-load {
+            0% {
+                transform: rotateZ(0deg);
+            }
+
+            50% {
+                transform: rotateZ(45deg);
+            }
+        }
+    </style>
+    <style>
+        #user-info-input-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            z-index: 5;
+        }
+
+        #user-info-input-container {
+            display: flex;
+            align-content: space-between;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            flex-direction: row;
+            box-sizing: border-box;
+            width: 500px;
+            max-width: 90%;
+            height: calc(14px * 5 + 32px * 4);
+            padding: 14px;
+        }
+
+        #user-name,
+        #user-email,
+        #user-password {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 16px;
+            background: #ddd;
+            width: 100%;
+            height: 32px;
+            padding: 8px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        #user-info-send {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 32px;
+            background: #ddd;
+            width: 64px;
+            height: 32px;
+            padding: 0px;
+            border: 0px;
+            border-radius: 2px;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyA8JICoYEREFIlrCdzUcNg1odkpAiDrXho",
+            authDomain: "private-message-9cfb8.firebaseapp.com",
+            databaseURL: "https://private-message-9cfb8.firebaseio.com",
+            projectId: "private-message-9cfb8",
+            storageBucket: "private-message-9cfb8.appspot.com",
+            messagingSenderId: "306023486761"
+        };
+        firebase.initializeApp(config);
+    </script>
+</head>
+
+<body>
+    <header>即時留言板</header>
+    <div id="user-info-input-box">
+        <div id="user-info-input-container">
+            <input type="text" id="user-name" placeholder="輸入暱稱" />
+            <input type="text" id="user-email" placeholder="輸入Email" />
+            <input type="password" id="user-password" placeholder="輸入密碼" />
+            <input type="button" id="user-info-send" value="完成" />
+        </div>
+    </div>
+    <div id="message-container">
+        <div id="loading">
+            <div id="loading-circle">
+                <div id="loading-circle-cover"></div>
+                <div id="loading-circle-left-cover"></div>
+                <div id="loading-circle-right-cover"></div>
+            </div>
+        </div>
+    </div>
+    <div id="message-input-container">
+        <input type="button" id="user-logout" value="登出" />
+        <textarea id="message-input" placeholder="輸入訊息"></textarea>
+        <input type="button" id="message-send" value="送出" />
+    </div>
+    <script>
+        var messageContainer = document.getElementById("message-container"),
+            messageSend = document.getElementById("message-send"),
+            messageInput = document.getElementById("message-input"),
+            load = document.getElementById("loading"),
+            messageLength = -1,
+            userInfoSend = document.getElementById("user-info-send"),
+            userNameInput = document.getElementById("user-name"),
+            userEmailInput = document.getElementById("user-email"),
+            userPasswordInput = document.getElementById("user-password"),
+            userNameCover = document.getElementById("user-info-input-box"),
+            userLogout = document.getElementById("user-logout"),
+            userName = "";
+
+        userNameInput.focus();
+        messageInput.readOnly = true;
+
+        function createMessage(id) {
+            firebase.database().ref(`/${id}`).once("value", function (response) {
+                var data = response.val();
+                if (!data) return;
+                if (window.userName && data.userName != window.userName)
+                    document.title = `${data.userName}有新的留言`;
+                var updateTime = data.updateTime,
+                    message = data.message,
+                    userName = data.userName;
+                if (!document.getElementById(`update-in-${data.updateTime.replace(/ |:/g, "-")}`))
+                    createUpdateTime(data.updateTime);
+
+                var messageDiv = document.createElement("div");
+                messageDiv.id = `message${id}`;
+                messageDiv.className = "message";
+                messageDiv.innerHTML = `${userName} : ${message}`;
+
+                messageDiv.addEventListener("dblclick", function () {
+                    if (confirm("刪除訊息?")) {
+                        firebase.database().ref(`/${id}`).remove(function () {
+                            messageDiv.parentNode.removeChild(messageDiv);
+                        });
+                    }
+                });
+
+                messageContainer.appendChild(messageDiv);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            });
+        }
+
+        function createUpdateTime(updateTime) {
+            var updateTimeDiv = document.createElement("div"),
+                updateTimeContentDiv = document.createElement("div");
+            updateTimeDiv.id = `update-in-${updateTime.replace(/ |:/g, "-")}`;
+            updateTimeDiv.className = "update-time";
+            updateTimeContentDiv.className = "time";
+            updateTimeContentDiv.innerHTML = updateTime;
+            updateTimeDiv.appendChild(updateTimeContentDiv);
+            messageContainer.appendChild(updateTimeDiv);
+        }
+
+        function format(v) {
+            return (v > 9 ? "" : "0") + v;
+        }
+
+        userInfoSend.addEventListener("click", async function () {
+            userName = userNameInput.value;
+            var userEmail = userEmailInput.value;
+            var userPassword = userPasswordInput.value;
+
+            if (userName && userEmail && userPassword) {
+                try {
+                    await firebase.auth().signInWithEmailAndPassword(userEmail, userPassword);
+                } catch (e) {
+                    if (e.code === "auth/wrong-password") return alert("密碼錯誤");
+
+                    try {
+                        await firebase.auth().createUserWithEmailAndPassword(userEmail, userPassword);
+                    } catch (e) {
+                        if (e.code === "auth/weak-password") return alert("密碼長度不足");
+                    }
+                }
+
+                userNameCover.style.display = "none";
+                messageInput.readOnly = false;
+                messageInput.focus();
+                messageInput.placeholder = `${userName}, 試著` + messageInput.placeholder + "吧";
+                localStorage.setItem("userName", userName);
+                localStorage.setItem("userEmail", userEmail);
+                localStorage.setItem("userPassword", userPassword);
+
+                firebase.database().ref("/length").on("value", function (response) {
+                    messageLength = response.val();
+
+                    if (load) {
+                        load.style.opacity = 0;
+                        load.style.height = "0px";
+                        setTimeout(function () {
+                            messageContainer.removeChild(load);
+                            load = undefined;
+                        }, 2000);
+                    }
+
+                    for (var id = 0; id < messageLength; id++) {
+                        if (document.getElementById(`message${id}`)) continue;
+                        createMessage(id);
+                    }
+                });
+            }
+        });
+
+        messageSend.addEventListener("click", function () {
+            var now = new Date(),
+                updateTime = `${now.getFullYear()}-${
+                    format(now.getMonth() + 1)
+                    }-${format(now.getDate())} ${format(now.getHours())}:${format(now.getMinutes())}`,
+                message = messageInput.value;
+            if (!message) return;
+            firebase.database().ref("/length").once("value", function (response) {
+                messageLength = response.val() || 0;
+                firebase.database().ref(`/${messageLength}`).set({
+                    userName,
+                    updateTime,
+                    message
+                }, function () {
+                    firebase.database().ref("/length").set(++messageLength);
+                    messageInput.value = "";
+                });
+            });
+            messageInput.placeholder = "輸入訊息";
+        });
+
+        messageInput.addEventListener("keypress", function (event) {
+            if (event.which == 13 && this.selectionStart == this.value.length) {
+                event.preventDefault();
+                messageSend.click();
+            }
+        });
+
+        for (let input of [userNameInput, userEmailInput, userPasswordInput]) {
+            input.addEventListener("keypress", function (event) {
+                if (event.which == 13) userInfoSend.click();
+            });
+        }
+
+        window.addEventListener("focus", function () {
+            document.title = "即時留言板";
+        });
+
+        userLogout.addEventListener("click", function() {
+            localStorage.removeItem("userName");
+            location.reload();
+        });
+
+        if (localStorage.getItem("userName")) {
+            userNameInput.value = localStorage.getItem("userName");
+            userEmailInput.value = localStorage.getItem("userEmail");
+            userPasswordInput.value = localStorage.getItem("userPassword");
+            userInfoSend.click();
+        }
+    </script>
+</body>
+
+</html>
