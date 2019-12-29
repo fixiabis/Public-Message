@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>即時聊天室</title>
+    <style id="base-style">
+        * {
+            font-family: monospace;
+            outline: none;
+        }
+
+        html,
+        body {
+            display: flex;
+            flex-direction: column;
+            color: #eee;
+            background: #222;
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+        }
+
+        @keyframes show {
+            0% {
+                opacity: 0;
+            }
+        }
+    </style>
+    <style id="header-style">
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            font-size: 40px;
+            padding-left: 20px;
+            line-height: 60px;
+            width: calc(100% - 20px);
+            height: 60px;
+        }
+
+        #user-join {
+            margin-left: auto;
+        }
+
+        #user-join {
+            width: 100px;
+            height: 60px;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #user-join:hover {
+            background-color: #ddd;
+            color: #111;
+        }
+
+        @media screen and (max-width: 500px) {
+            header {
+                font-size: 30px;
+            }
+
+            #user-join {
+                width: 60px;
+            }
+        }
+    </style>
+    <style id="message-view-style">
+        #message-container {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            background: #111;
+            width: 100%;
+            height: calc(100% - 120px);
+            overflow: auto;
+            padding: 8px;
+        }
+
+        .message {
+            box-sizing: border-box;
+            background: #444;
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0px;
+            animation: show 0.5s;
+        }
+
+        .message::after {
+            content: "";
+            clear: both;
+        }
+
+        .update-time {
+            box-sizing: border-box;
+            width: 100%;
+            height: 20px;
+            animation: show 0.5s;
+        }
+
+        .update-time::before {
+            display: block;
+            content: "";
+            background: #ddd;
+            width: calc(100% - 150px);
+            height: 2px;
+            margin: 9px 0px;
+            float: left;
+        }
+
+        .update-time::after {
+            content: "";
+            clear: both;
+        }
+
+        .update-time .time {
+            display: block;
+            font-size: 14px;
+            text-align: center;
+            line-height: 20px;
+            width: 150px;
+            height: 20px;
+            float: left;
+        }
+    </style>
+    <style id="message-input-style">
+        #message-input-container {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: row;
+            box-sizing: border-box;
+            background: #333;
+            width: 100%;
+            height: 60px;
+            padding: 14px;
+        }
+
+        #message-input {
+            box-sizing: border-box;
+            resize: none;
+            font-size: 16px;
+            line-height: 16px;
+            background: #ddd;
+            width: calc(100% - 64px - 14px);
+            height: 32px;
+            padding: 8px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        #message-send {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 32px;
+            background: #ddd;
+            width: 64px;
+            height: 32px;
+            padding: 0px;
+            border: 0px;
+            border-radius: 2px;
+        }
+    </style>
+    <style id="loading-style">
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            transition: opacity 0.5s;
+        }
+
+        #loading-circle {
+            background: #eee;
+            width: 100px;
+            height: 100px;
+            position: relative;
+            border-radius: 100px;
+            animation: load 2s infinite;
+        }
+
+        #loading-circle-cover {
+            background: #111;
+            width: 96px;
+            height: 96px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            border-radius: 96px;
+        }
+
+        #loading-circle-left-cover,
+        #loading-circle-right-cover {
+            background: #111;
+            width: 60px;
+            height: 120px;
+            position: absolute;
+            top: -10px;
+            animation-duration: 1s;
+            animation-iteration-count: infinite;
+        }
+
+        #loading-circle-left-cover {
+            left: -10px;
+            transform-origin: right;
+            animation-name: left-load;
+        }
+
+        #loading-circle-right-cover {
+            right: -10px;
+            transform-origin: left;
+            animation-name: right-load;
+        }
+
+        @keyframes load {
+            0% {
+                transform: rotateZ(0deg);
+            }
+
+            50% {
+                transform: rotateZ(360deg);
+            }
+
+            100% {
+                transform: rotateZ(720deg);
+            }
+        }
+
+        @keyframes left-load {
+            0% {
+                transform: rotateZ(-0deg);
+            }
+
+            50% {
+                transform: rotateZ(-45deg);
+            }
+        }
+
+        @keyframes right-load {
+            0% {
+                transform: rotateZ(0deg);
+            }
+
+            50% {
+                transform: rotateZ(45deg);
+            }
+        }
+    </style>
+    <style id="user-info-input-style">
+        #user-info-input-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            z-index: 5;
+        }
+
+        #user-info-input-container {
+            display: flex;
+            align-content: space-between;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            flex-direction: row;
+            box-sizing: border-box;
+            width: 500px;
+            max-width: 90%;
+            height: calc(14px * 4 + 32px * 3);
+            padding: 14px;
+        }
+
+        #user-email,
+        #user-password {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 16px;
+            background: #ddd;
+            width: 100%;
+            height: 32px;
+            padding: 8px;
+            border: 0px;
+            border-radius: 2px;
+        }
+
+        #user-info-send {
+            box-sizing: border-box;
+            font-size: 16px;
+            line-height: 32px;
+            background: #ddd;
+            width: 64px;
+            height: 32px;
+            padding: 0px;
+            border: 0px;
+            border-radius: 2px;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/4.1.3/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyA8JICoYEREFIlrCdzUcNg1odkpAiDrXho",
+            authDomain: "private-message-9cfb8.firebaseapp.com",
+            databaseURL: "https://private-message-9cfb8.firebaseio.com",
+            projectId: "private-message-9cfb8",
+            storageBucket: "private-message-9cfb8.appspot.com",
+            messagingSenderId: "306023486761"
+        };
+        firebase.initializeApp(config);
+    </script>
+</head>
+
+<body>
+    <header>
+        即時聊天室
+        <div id="user-join">加入</div>
+    </header>
+    <div id="user-info-input-box" style="display: none;">
+        <div id="user-info-input-container">
+            <input type="text" id="user-email" placeholder="輸入Email" />
+            <input type="password" id="user-password" placeholder="輸入密碼" />
+            <input type="button" id="user-info-send" value="完成" />
+        </div>
+    </div>
+    <div id="message-container">
+        <div id="loading">
+            <div id="loading-circle">
+                <div id="loading-circle-left-cover"></div>
+                <div id="loading-circle-right-cover"></div>
+                <div id="loading-circle-cover"></div>
+            </div>
+        </div>
+    </div>
+    <div id="message-input-container">
+        <textarea id="message-input" placeholder="輸入訊息"></textarea>
+        <input type="button" id="message-send" value="送出" />
+    </div>
+    <script type="module">
+        var messageContainer = document.getElementById("message-container"),
+            messageSend = document.getElementById("message-send"),
+            messageInput = document.getElementById("message-input"),
+            loadingCircleContainer = document.getElementById("loading");
+        var messageLength = -1;
+
+        var formatTime = time => [
+            time.getFullYear(), "-",
+            time.getMonth() + 1, "-",
+            time.getDate(), " ",
+            time.getHours(), ":",
+            time.getMinutes()
+        ].map((v, i) => i % 2 || v > 9 ? v : "0" + v).join("");
+
+        function createMessage(id) {
+            let dataPath = `/${id}`;
+
+            firebase.Database().ref(dataPath).on("value", messageData => {
+                let messageInfo = messageData.val();
+                if (!messageInfo) return;
+
+                let { userEmail, message, updateTime } = messageInfo;
+                let updateTimeInfoViewId = `update-in-${updateTime.replace(/ |:/g, "-")}`;
+
+                if (!document.getElementById(updateTimeInfoViewId)) {
+                    createUpdateTime(updateTime);
+                }
+
+                let messageInfoView = document.createElement("div");
+
+                Object.assign(messageInfoView, {
+                    id: `message${id}`,
+                    className: "message",
+                    innerText: `${userEmail} : ${message}`
+                });
+
+                messageContainer.appendChild(messageInfoView);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            });
+        }
+
+        function createUpdateTime(updateTime) {
+            var updateTimeInfoView = document.createElement("div"),
+                updateTimeContainer = document.createElement("div");
+
+            updateTimeInfoView.id = `update-in-${updateTime.replace(/ |:/g, "-")}`;
+            updateTimeInfoView.className = "update-time";
+            updateTimeContainer.className = "time";
+            updateTimeContainer.innerText = updateTime;
+            updateTimeInfoView.appendChild(updateTimeContainer);
+            messageContainer.appendChild(updateTimeInfoView);
+        }
+
+        window.addEventListener("focus", function () {
+            document.title = "即時留言板";
+        });
+
+        messageInput.addEventListener("keypress", function (event) {
+            if (event.which == 13 && this.selectionStart == this.value.length) {
+                event.preventDefault();
+                messageSend.click();
+            }
+        });
+
+        messageSend.addEventListener("click", function () {
+            var message = messageInput.value;
+            if (!message) return;
+
+            var now = new Date(),
+                updateTime = formatTime(now);
+
+            firebase.Database().ref("/length").once("value", messageLengthData => {
+                messageLength = messageLengthData.val() || 0;
+
+                firebase.Database().ref(`/${messageLength}`).set({ userEmail, message, updateTime }, () => {
+                    firebase.Database().ref("/length").set(++messageLength);
+                    messageInput.value = "";
+                });
+            });
+
+            messageInput.placeholder = "輸入訊息";
+        });
+
+        var userJoin = document.getElementById("user-join");
+        
+        userJoin.addEventListener("click", e => userInfoInputBox.style.display = "");
+
+        var userInfoSend = document.getElementById("user-info-send"),
+            userEmailInput = document.getElementById("user-email"),
+            userPasswordInput = document.getElementById("user-password"),
+            userInfoInputBox = document.getElementById("user-info-input-box");
+        
+        var userEmail;
+
+        userInfoSend.addEventListener("click", async function () {
+            userEmail = userEmailInput.value;
+            var userPassword = userPasswordInput.value;
+
+            if (userEmail && userPassword) {
+                try {
+                    await firebase.auth().signInWithEmailAndPassword(userEmail, userPassword);
+                } catch (e) {
+                    if (e.code === "auth/wrong-password") return alert("密碼錯誤");
+                    try {
+                        await firebase.auth().createUserWithEmailAndPassword(userEmail, userPassword);
+                    } catch (e) {
+                        if (e.code === "auth/weak-password") return alert("密碼長度不足");
+                    }
+                }
+
+                userInfoInputBox.style.display = "none";
+                messageInput.readOnly = false;
+                messageInput.focus();
+                messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
+
+                firebase.database().ref("/length").on("value", function (response) {
+                    messageLength = response.val();
+                    if (loadingCircleContainer) {
+                        loadingCircleContainer.style.opacity = 0;
+                        loadingCircleContainer.style.height = "0px";
+                        setTimeout(function () {
+                            messageContainer.removeChild(loadingCircleContainer);
+                            loadingCircleContainer = undefined;
+                        }, 2000);
+                    }
+                    for (var id = 0; id < messageLength; id++) {
+                        if (document.getElementById(`message${id}`)) continue;
+                        createMessage(id);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
