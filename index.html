@@ -412,6 +412,8 @@
         });
 
         messageSend.addEventListener("click", function () {
+            if (!userEmail) return userInfoInputBox.style.display = "";
+    
             var message = messageInput.value;
             if (!message) return;
 
@@ -472,7 +474,7 @@
             userInfoInputBox = document.getElementById("user-info-input-box");
 
         var userEmail;
-    
+
         for (let input of [userEmailInput, userPasswordInput]) {
             input.addEventListener("keypress", function (event) {
                 if (event.which == 13) userInfoSend.click();
@@ -501,6 +503,7 @@
                 messageInput.focus();
                 messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
             } else {
+                userEmail = void 0;
                 userJoin.innerText = "加入";
                 userInfoInputBox.style.display = "none";
             }
