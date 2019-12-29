@@ -364,6 +364,10 @@
         function createMessage(id) {
             let dataPath = `/${id}`;
 
+            let messageViewId = `message-${id}`;
+
+            if (document.getElementById(messageViewId)) return;
+
             firebase.database().ref(dataPath).on("value", messageData => {
                 let messageInfo = messageData.val();
                 if (!messageInfo) return;
@@ -413,7 +417,7 @@
 
         messageSend.addEventListener("click", function () {
             if (!userEmail) return userInfoInputBox.style.display = "";
-    
+
             var message = messageInput.value;
             if (!message) return;
 
@@ -463,7 +467,7 @@
                 }, 2000);
             }
             for (var id = 0; id < messageLength; id++) {
-                if (document.getElementById(`message${id}`)) continue;
+                if (document.getElementById(`message-${id}`)) continue;
                 createMessage(id);
             }
         });
