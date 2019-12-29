@@ -346,7 +346,7 @@
         <textarea id="message-input" placeholder="輸入訊息"></textarea>
         <input type="button" id="message-send" value="送出" />
     </div>
-    <script type="module">
+    <script>
         var messageContainer = document.getElementById("message-container"),
             messageSend = document.getElementById("message-send"),
             messageInput = document.getElementById("message-input"),
@@ -364,7 +364,7 @@
         function createMessage(id) {
             let dataPath = `/${id}`;
 
-            firebase.Database().ref(dataPath).on("value", messageData => {
+            firebase.database().ref(dataPath).on("value", messageData => {
                 let messageInfo = messageData.val();
                 if (!messageInfo) return;
 
@@ -418,11 +418,11 @@
             var now = new Date(),
                 updateTime = formatTime(now);
 
-            firebase.Database().ref("/length").once("value", messageLengthData => {
+            firebase.database().ref("/length").once("value", messageLengthData => {
                 messageLength = messageLengthData.val() || 0;
 
-                firebase.Database().ref(`/${messageLength}`).set({ userEmail, message, updateTime }, () => {
-                    firebase.Database().ref("/length").set(++messageLength);
+                firebase.database().ref(`/${messageLength}`).set({ userEmail, message, updateTime }, () => {
+                    firebase.database().ref("/length").set(++messageLength);
                     messageInput.value = "";
                 });
             });
@@ -431,15 +431,53 @@
         });
 
         var userJoin = document.getElementById("user-join");
-        
-        userJoin.addEventListener("click", e => userInfoInputBox.style.display = "");
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                userJoin.innerText = "退出";
+                userEmail = user.email;
+            }
+        });
+
+        userJoin.addEventListener("click", e => {
+            if (userJoin.innerText == "退出") {
+                userJoin.innerText = "加入";
+                firebase.auth().signOut();
+            }
+
+            userEmailInput.value = "";
+            userPasswordInput.value = "";
+            userInfoInputBox.style.display = "";
+        });
+
+        firebase.database().ref("/length").on("value", function (response) {
+            messageLength = response.val();
+            if (loadingCircleContainer) {
+                loadingCircleContainer.style.opacity = 0;
+                loadingCircleContainer.style.height = "0px";
+                setTimeout(function () {
+                    messageContainer.removeChild(loadingCircleContainer);
+                    loadingCircleContainer = undefined;
+                }, 2000);
+            }
+            for (var id = 0; id < messageLength; id++) {
+                if (document.getElementById(`message${id}`)) continue;
+                createMessage(id);
+            }
+        });
 
         var userInfoSend = document.getElementById("user-info-send"),
             userEmailInput = document.getElementById("user-email"),
             userPasswordInput = document.getElementById("user-password"),
             userInfoInputBox = document.getElementById("user-info-input-box");
-        
+
         var userEmail;
+    
+        for (let input of [userEmailInput, userPasswordInput]) {
+            input.addEventListener("keypress", function (event) {
+                if (event.which == 13) userInfoSend.click();
+            });
+        }
 
         userInfoSend.addEventListener("click", async function () {
             userEmail = userEmailInput.value;
@@ -457,26 +495,14 @@
                     }
                 }
 
+                userJoin.innerText = "退出";
                 userInfoInputBox.style.display = "none";
                 messageInput.readOnly = false;
                 messageInput.focus();
                 messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
-
-                firebase.database().ref("/length").on("value", function (response) {
-                    messageLength = response.val();
-                    if (loadingCircleContainer) {
-                        loadingCircleContainer.style.opacity = 0;
-                        loadingCircleContainer.style.height = "0px";
-                        setTimeout(function () {
-                            messageContainer.removeChild(loadingCircleContainer);
-                            loadingCircleContainer = undefined;
-                        }, 2000);
-                    }
-                    for (var id = 0; id < messageLength; id++) {
-                        if (document.getElementById(`message${id}`)) continue;
-                        createMessage(id);
-                    }
-                });
+            } else {
+                userJoin.innerText = "加入";
+                userInfoInputBox.style.display = "none";
             }
         });
     </script>
