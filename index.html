@@ -379,6 +379,10 @@
                     createUpdateTime(updateTime);
                 }
 
+                if (window.userEmail && data.userEmail != window.userEmail){
+                    document.title = `${data.userEmail}有新的留言`;
+                }
+
                 let messageInfoView = document.createElement("div");
 
                 Object.assign(messageInfoView, {
@@ -405,7 +409,7 @@
         }
 
         window.addEventListener("focus", function () {
-            document.title = "即時留言板";
+            document.title = "即時聊天室";
         });
 
         messageInput.addEventListener("keypress", function (event) {
@@ -492,20 +496,26 @@
             if (userEmail && userPassword) {
                 try {
                     await firebase.auth().signInWithEmailAndPassword(userEmail, userPassword);
+                    userJoin.innerText = "退出";
+                    userInfoInputBox.style.display = "none";
+                    messageInput.readOnly = false;
+                    messageInput.focus();
+                    messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
                 } catch (e) {
                     if (e.code === "auth/wrong-password") return alert("密碼錯誤");
+
                     try {
                         await firebase.auth().createUserWithEmailAndPassword(userEmail, userPassword);
+                        userJoin.innerText = "退出";
+                        userInfoInputBox.style.display = "none";
+                        messageInput.readOnly = false;
+                        messageInput.focus();
+                        messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
                     } catch (e) {
                         if (e.code === "auth/weak-password") return alert("密碼長度不足");
                     }
                 }
 
-                userJoin.innerText = "退出";
-                userInfoInputBox.style.display = "none";
-                messageInput.readOnly = false;
-                messageInput.focus();
-                messageInput.placeholder = `${userEmail}, 試著` + messageInput.placeholder + "吧";
             } else {
                 userEmail = void 0;
                 userJoin.innerText = "加入";
