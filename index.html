@@ -368,7 +368,7 @@
 
             if (document.getElementById(messageViewId)) return;
 
-            firebase.database().ref(dataPath).on("value", messageData => {
+            firebase.database().ref(dataPath).once("value", messageData => {
                 let messageInfo = messageData.val();
                 if (!messageInfo) return;
 
