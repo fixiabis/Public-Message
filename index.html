@@ -379,8 +379,8 @@
                     createUpdateTime(updateTime);
                 }
 
-                if (window.userEmail && data.userEmail != window.userEmail){
-                    document.title = `${data.userEmail}有新的留言`;
+                if (window.userEmail && userEmail != window.userEmail){
+                    document.title = `${userEmail}有新的留言`;
                 }
 
                 let messageInfoView = document.createElement("div");
